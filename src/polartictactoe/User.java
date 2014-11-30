@@ -24,11 +24,18 @@ import javafx.scene.paint.Color;
 
 public class User extends Player {
 
+	/** Move selected by the user */
 	Point selectedPoint = null;
+	/** Label to prompt user to select a move */
 	Label selectLabel = new Label("Select a move:");
+	/** Button to submit move */
 	Button select = new Button("Select");
 
+	/**
+	 * Sets up the UI to get moves from the user
+	 */
 	public User() {
+		// Create UI content
 		Label xLabel = new Label("X (from center):");
 		ComboBox<String> xBox = new ComboBox<>(
 				FXCollections.observableArrayList("1", "2", "3", "4"));
@@ -40,20 +47,27 @@ public class User extends Player {
 						"7", "8", "9", "10", "11", "12"));
 		yBox.getSelectionModel().selectFirst();
 
+		// Update UI
 		setHgap(10);
 		setVgap(10);
 		addRow(0, selectLabel, select);
 		addRow(1, xLabel, xBox);
 		addRow(2, yLabel, yBox);
 
+		// Select button handler
 		select.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent e) {
+				// Reset UI for later turns
 				selectLabel.setTextFill(Color.BLACK);
 				selectLabel.setText("Select a move:");
+
+				// Get selected move
 				selectedPoint = new Point(xBox.getSelectionModel()
 						.getSelectedIndex(), yBox.getSelectionModel()
 						.getSelectedIndex());
+
+				// Signal selection
 				synchronized (select) {
 					select.notify();
 				}
@@ -61,9 +75,15 @@ public class User extends Player {
 		});
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see polartictactoe.Player#getMove(java.util.Set, java.util.Set)
+	 */
 	@Override
-	public Point getMove(Set<Point> legalMoves) {
+	public Point getMove(Set<Point> legalMoves, Set<Point> opponentMoves) {
 		while (true) {
+			// Wait for move to be submitted
 			try {
 				synchronized (select) {
 					select.wait();
@@ -72,9 +92,11 @@ public class User extends Player {
 				e.printStackTrace();
 				continue;
 			}
+			// Check for legal move
 			if (legalMoves.contains(selectedPoint)) {
 				return selectedPoint;
 			} else {
+				// Notify user of illegal move
 				Platform.runLater(new Thread() {
 					@Override
 					public void run() {

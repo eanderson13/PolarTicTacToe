@@ -2,7 +2,7 @@
  *	
  *	Project: Polar Tic Tac Toe
  *	
- *	Description: Abstract class that all players must implement.
+ *	Description: Abstract class that all Polar Tic Tac Toe agents must implement.
  *
  *	Author: Erik Anderson
  *
@@ -17,15 +17,37 @@ import java.util.Set;
 import javafx.scene.layout.GridPane;
 
 public abstract class Player extends GridPane {
-	
+
+	/** Set of moves made by the agent */
 	private Set<Point> moves = new HashSet<>();
 
-	public abstract Point getMove(Set<Point> legalMoves);
-	
+	/**
+	 * Returns the move selected by the agent
+	 * 
+	 * @param legalMoves
+	 *            The set of legal moves
+	 * @param opponentMoves
+	 *            The set of moves made by the opponent
+	 * @return The selected move
+	 */
+	public abstract Point getMove(Set<Point> legalMoves,
+			Set<Point> opponentMoves);
+
+	/**
+	 * Returns the set of moves made by the agent
+	 * 
+	 * @return The set of moves
+	 */
 	public Set<Point> getMoves() {
 		return moves;
 	}
-	
+
+	/**
+	 * Adds a move to the set of moves made by the agent
+	 * 
+	 * @param move
+	 *            The move to add
+	 */
 	public void addMove(Point move) {
 		moves.add(move);
 	}
