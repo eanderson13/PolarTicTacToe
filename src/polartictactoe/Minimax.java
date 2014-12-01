@@ -25,16 +25,19 @@ import javafx.scene.control.TextField;
 
 public class Minimax extends Player {
 
-	/** Maximum search depth allowed (user parameter) */
+	/** Maximum search depth allowed */
 	int searchDepth;
+	/** Indicates whether alpha-beta pruning is enabled */
+	boolean alphabeta;
+	/** Heuristic to use */
+	Heuristic heuristic;
+
 	/** Maximum search depth reached for the current move */
 	int maxDepth;
 	/** Number of nodes searched for the current move */
 	int nodeCount;
 	/** Time elapsed for the current move */
 	long time;
-	/** Indicates whether alpha-beta pruning is enabled */
-	boolean alphabeta;
 
 	/** Label to display maximum search depth reached */
 	Label depthValue = new Label();
@@ -51,8 +54,15 @@ public class Minimax extends Player {
 	 */
 	public Minimax() {
 		// Create UI content
+		Label heuristicLabel = new Label("Heuristic:");
+		ComboBox<String> heuristicBox = new ComboBox<>(
+				FXCollections.observableArrayList("Function", "Classifier",
+						"Neural Net"));
+		heuristicBox.getSelectionModel().selectFirst();
+
 		Label depthLabel = new Label("Search depth (0 = unbounded):");
 		TextField depthField = new TextField("0");
+		depthField.setPrefWidth(0);
 
 		Label abLabel = new Label("Use alpha-beta pruning?");
 		ComboBox<String> abBox = new ComboBox<>(
@@ -62,9 +72,10 @@ public class Minimax extends Player {
 		// Update UI
 		setHgap(10);
 		setVgap(10);
-		addRow(0, depthLabel, depthField);
-		addRow(1, abLabel, abBox);
-		addRow(2, submit);
+		addRow(0, heuristicLabel, heuristicBox);
+		addRow(1, depthLabel, depthField);
+		addRow(2, abLabel, abBox);
+		addRow(3, submit);
 
 		// Submit button handler
 		submit.setOnAction(new EventHandler<ActionEvent>() {
@@ -73,6 +84,17 @@ public class Minimax extends Player {
 				// Update parameters
 				searchDepth = Integer.parseInt(depthField.getText());
 				alphabeta = (abBox.getSelectionModel().getSelectedIndex() == 0);
+				switch (heuristicBox.getSelectionModel().getSelectedIndex()) {
+				case 0:
+					// heuristic = new Heuristic();
+					break;
+				case 1:
+					// heuristic = new Heuristic();
+					break;
+				case 2:
+					// heuristic = new Heuristic();
+					break;
+				}
 
 				// Signal submission
 				synchronized (submit) {
@@ -89,11 +111,7 @@ public class Minimax extends Player {
 	 */
 	@Override
 	public Point getMove(Set<Point> legalMoves, Set<Point> opponentMoves) {
-		// Initialize values
-		maxDepth = searchDepth - 1;
-		nodeCount = 0;
-		time = System.currentTimeMillis();
-
+		// Copy move set
 		Set<Point> legal = legalMoves;
 
 		// Check if first move
@@ -135,6 +153,11 @@ public class Minimax extends Player {
 				}
 			});
 		}
+		// Initialize values
+		maxDepth = searchDepth - 1;
+		nodeCount = 0;
+		time = System.currentTimeMillis();
+
 		// Get move
 		Point move = maxMove(legal, opponentMoves);
 
@@ -162,7 +185,8 @@ public class Minimax extends Player {
 	 */
 	private Point maxMove(Set<Point> legal, Set<Point> opponent) {
 		// Initialize values
-		int value = -2, a = -2;
+		double value = Double.NEGATIVE_INFINITY;
+		double a = value;
 		Point choice = null;
 
 		// Check all legal moves
@@ -176,9 +200,9 @@ public class Minimax extends Player {
 				return move;
 			}
 			// Calculate utility
-			int utility = min(PolarTicTacToe.addNeighbors(move, legal,
+			double utility = min(PolarTicTacToe.addNeighbors(move, legal,
 					selfMoves, opponent), selfMoves, opponent, searchDepth - 1,
-					a, 2);
+					a, Double.POSITIVE_INFINITY);
 
 			// Check if best move so far
 			if (utility > value) {
@@ -208,18 +232,22 @@ public class Minimax extends Player {
 	 *            The optimal utility found so far for the opponent
 	 * @return The optimal utility
 	 */
-	private int max(Set<Point> legal, Set<Point> self, Set<Point> opponent,
-			int depth, int a, int b) {
+	private double max(Set<Point> legal, Set<Point> self, Set<Point> opponent,
+			int depth, double a, double b) {
 		// Update status
 		maxDepth = Math.min(maxDepth, depth);
 		nodeCount++;
 
 		// Check for terminate condition
-		if (depth == 0 || legal.size() == 0) {
+		if (legal.size() == 0) {
+			return 0;
+		}
+		if (depth == 0) {
+			// return heuristic.getValue(self, opponent);
 			return 0;
 		}
 		// Initialize value
-		int value = -2;
+		double value = Double.NEGATIVE_INFINITY;
 		// Check all legal moves
 		for (Point move : legal) {
 			// Copy move set
@@ -263,18 +291,22 @@ public class Minimax extends Player {
 	 *            The optimal utility found so far for the opponent
 	 * @return The optimal utility
 	 */
-	private int min(Set<Point> legal, Set<Point> self, Set<Point> opponent,
-			int depth, int a, int b) {
+	private double min(Set<Point> legal, Set<Point> self, Set<Point> opponent,
+			int depth, double a, double b) {
 		// Update status
 		maxDepth = Math.min(maxDepth, depth);
 		nodeCount++;
 
 		// Check for terminate condition
-		if (depth == 0 || legal.size() == 0) {
+		if (legal.size() == 0) {
+			return 0;
+		}
+		if (depth == 0) {
+			// return heuristic.getValue(self, opponent);
 			return 0;
 		}
 		// Initialize value
-		int value = 2;
+		double value = Double.POSITIVE_INFINITY;
 		// Check all legal moves
 		for (Point move : legal) {
 			// Copy move set

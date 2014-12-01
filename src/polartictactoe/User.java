@@ -37,14 +37,14 @@ public class User extends Player {
 	public User() {
 		// Create UI content
 		Label xLabel = new Label("X (from center):");
-		ComboBox<String> xBox = new ComboBox<>(
-				FXCollections.observableArrayList("1", "2", "3", "4"));
+		ComboBox<Integer> xBox = new ComboBox<>(
+				FXCollections.observableArrayList(1, 2, 3, 4));
 		xBox.getSelectionModel().selectFirst();
 
 		Label yLabel = new Label("Y (around circle):");
-		ComboBox<String> yBox = new ComboBox<>(
-				FXCollections.observableArrayList("1", "2", "3", "4", "5", "6",
-						"7", "8", "9", "10", "11", "12"));
+		ComboBox<Integer> yBox = new ComboBox<>(
+				FXCollections.observableArrayList(1, 2, 3, 4, 5, 6, 7, 8, 9,
+						10, 11, 12));
 		yBox.getSelectionModel().selectFirst();
 
 		// Update UI

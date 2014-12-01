@@ -105,7 +105,7 @@ public class PolarTicTacToe extends Application {
 		layout.setHgap(10);
 		layout.setVgap(10);
 		layout.setPadding(new Insets(10));
-		layout.setPrefSize(475, 350);
+		layout.setPrefSize(600, 350);
 		layout.add(board, 0, 0, 1, 6);
 		layout.addRow(0, labelp1, boxp1);
 		layout.addRow(2, labelp2, boxp2);
