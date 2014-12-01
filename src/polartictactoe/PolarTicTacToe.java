@@ -47,8 +47,8 @@ public class PolarTicTacToe extends Application {
 	final int[] r = { 2 * r0, 3 * r0, 4 * r0, 5 * r0 };
 
 	/** List of agent types */
-	ObservableList<String> choices = FXCollections.observableArrayList("User",
-			"Minimax");
+	ObservableList<String> choices = FXCollections.observableArrayList("Human",
+			"Computer");
 	/** Selection box for player 1 agent type */
 	ComboBox<String> boxp1 = new ComboBox<>(choices);
 	/** Selection box for player 2 agent type */
@@ -278,6 +278,13 @@ public class PolarTicTacToe extends Application {
 
 				// Check for winning move
 				if (win(player.getMoves(), move)) {
+					// Reset the game board
+					boxp1.setDisable(false);
+					boxp2.setDisable(false);
+					play.setVisible(true);
+					play.setText("Play Again");
+
+					// Indicate winner
 					if (player == player1) {
 						message.setText("Game Over! Player 1 wins.");
 					} else {
@@ -285,17 +292,19 @@ public class PolarTicTacToe extends Application {
 					}
 					// Check for tie game
 				} else if (legalMoves.isEmpty()) {
+					// Reset the game board
+					boxp1.setDisable(false);
+					boxp2.setDisable(false);
+					play.setVisible(true);
+					play.setText("Play Again");
+
+					// Indicate tie
 					message.setText("Game Over! Tie game.");
 				} else {
 					// Play next turn
 					next.setDisable(false);
 					play(next, player, legalMoves);
 				}
-				// Reset the game board
-				boxp1.setDisable(false);
-				boxp2.setDisable(false);
-				play.setVisible(true);
-				play.setText("Play Again");
 			}
 		});
 		// Start task in a new thread
@@ -393,12 +402,40 @@ public class PolarTicTacToe extends Application {
 		// Ensure the current move is in the move set
 		moves.add(currentMove);
 
-		// Check moves along a line
-		if (moves.contains(new Point(0, (int) currentMove.getY()))
-				&& moves.contains(new Point(1, (int) currentMove.getY()))
-				&& moves.contains(new Point(2, (int) currentMove.getY()))
-				&& moves.contains(new Point(3, (int) currentMove.getY()))) {
+		// Check moves along line
+		int y = (int) currentMove.getY();
+		if (moves.contains(new Point(0, y)) && moves.contains(new Point(1, y))
+				&& moves.contains(new Point(2, y))
+				&& moves.contains(new Point(3, y))) {
 			return true;
+		}
+		// Check moves along counter-clockwise spiral
+		y = (int) (currentMove.getY() - currentMove.getX() + 12) % 12;
+		if (moves.contains(new Point(0, y))
+				&& moves.contains(new Point(1, (y + 1) % 12))
+				&& moves.contains(new Point(2, (y + 2) % 12))
+				&& moves.contains(new Point(3, (y + 3) % 12))) {
+			return true;
+		}
+		// Check moves along clockwise spiral
+		y = (int) (currentMove.getY() + currentMove.getX()) % 12;
+		if (moves.contains(new Point(0, y))
+				&& moves.contains(new Point(1, (y + 11) % 12))
+				&& moves.contains(new Point(2, (y + 10) % 12))
+				&& moves.contains(new Point(3, (y + 9) % 12))) {
+			return true;
+		}
+		// Check moves along circle
+		int x = (int) currentMove.getX();
+		// Unify with all 4 terms of inference rule
+		for (int i = 0; i < 4; i++) {
+			y = (int) (currentMove.getY() - i + 12) % 12;
+			if (moves.contains(new Point(x, y))
+					&& moves.contains(new Point(x, (y + 1) % 12))
+					&& moves.contains(new Point(x, (y + 2) % 12))
+					&& moves.contains(new Point(x, (y + 3) % 12))) {
+				return true;
+			}
 		}
 		// No win found
 		return false;
