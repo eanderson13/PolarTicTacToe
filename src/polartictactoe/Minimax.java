@@ -10,7 +10,6 @@
  */
 package polartictactoe;
 
-import java.awt.Point;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,6 +37,8 @@ public class Minimax extends Player {
 	int nodeCount;
 	/** Time elapsed for the current move */
 	long time;
+	/** Heuristic evaluation of the selected move */
+	double heuristicNum;
 
 	/** Label to display maximum search depth reached */
 	Label depthValue = new Label();
@@ -45,7 +46,8 @@ public class Minimax extends Player {
 	Label nodeValue = new Label();
 	/** Label to display time elapsed */
 	Label timeValue = new Label();
-
+	/** Label to display heuristic evaluation */
+	Label heuristicValue = new Label();
 	/** Button to submit user parameters */
 	Button submit = new Button("Submit Parameters");
 
@@ -55,17 +57,17 @@ public class Minimax extends Player {
 	public Minimax() {
 		// Create UI content
 		Label heuristicLabel = new Label("Heuristic:");
-		ComboBox<String> heuristicBox = new ComboBox<>(
+		final ComboBox<String> heuristicBox = new ComboBox<>(
 				FXCollections.observableArrayList("Function", "Classifier",
 						"Neural Net"));
 		heuristicBox.getSelectionModel().selectFirst();
 
 		Label depthLabel = new Label("Search depth (0 = unbounded):");
-		TextField depthField = new TextField("0");
+		final TextField depthField = new TextField("0");
 		depthField.setPrefWidth(0);
 
 		Label abLabel = new Label("Use alpha-beta pruning?");
-		ComboBox<String> abBox = new ComboBox<>(
+		final ComboBox<String> abBox = new ComboBox<>(
 				FXCollections.observableArrayList("Yes", "No"));
 		abBox.getSelectionModel().selectFirst();
 
@@ -86,7 +88,7 @@ public class Minimax extends Player {
 				alphabeta = (abBox.getSelectionModel().getSelectedIndex() == 0);
 				switch (heuristicBox.getSelectionModel().getSelectedIndex()) {
 				case 0:
-					// heuristic = new Heuristic();
+					heuristic = NeighborHeuristic.getInstance();
 					break;
 				case 1:
 					// heuristic = new Heuristic();
@@ -110,9 +112,9 @@ public class Minimax extends Player {
 	 * @see polartictactoe.Player#getMove(java.util.Set, java.util.Set)
 	 */
 	@Override
-	public Point getMove(Set<Point> legalMoves, Set<Point> opponentMoves) {
+	public Move getMove(Set<Move> legalMoves, Set<Move> opponentMoves) {
 		// Copy move set
-		Set<Point> legal = legalMoves;
+		Set<Move> legal = legalMoves;
 
 		// Check if first move
 		if (getMoves().size() == 0) {
@@ -131,10 +133,10 @@ public class Minimax extends Player {
 			// Only need to check one row for first move, because of symmetry
 			if (legal.size() == 48) {
 				legal = new HashSet<>();
-				legal.add(new Point(0, 0));
-				legal.add(new Point(1, 0));
-				legal.add(new Point(2, 0));
-				legal.add(new Point(3, 0));
+				legal.add(new Move(1, 0));
+				legal.add(new Move(2, 0));
+				legal.add(new Move(3, 0));
+				legal.add(new Move(4, 0));
 			}
 			// Schedule task for UI thread
 			Platform.runLater(new Thread() {
@@ -144,22 +146,24 @@ public class Minimax extends Player {
 					Label depthLabel = new Label("Maximum search depth:");
 					Label nodeLabel = new Label("Number of nodes searched:");
 					Label timeLabel = new Label("Time elapsed (ms):");
-
+					Label heuristicLabel = new Label(
+							"Heuristic evaluation (-1 to 1):");
 					// Update UI
 					getChildren().clear();
 					addRow(0, depthLabel, depthValue);
 					addRow(1, nodeLabel, nodeValue);
 					addRow(2, timeLabel, timeValue);
+					addRow(3, heuristicLabel, heuristicValue);
 				}
 			});
 		}
 		// Initialize values
 		maxDepth = searchDepth - 1;
-		nodeCount = 0;
+		nodeCount = 1;
 		time = System.currentTimeMillis();
 
 		// Get move
-		Point move = maxMove(legal, opponentMoves);
+		Move move = maxMove(legal, opponentMoves);
 
 		// Update UI
 		Platform.runLater(new Thread() {
@@ -168,6 +172,7 @@ public class Minimax extends Player {
 				depthValue.setText((searchDepth - maxDepth) + "");
 				nodeValue.setText(nodeCount + "");
 				timeValue.setText((System.currentTimeMillis() - time) + "");
+				heuristicValue.setText(heuristicNum + "");
 			}
 		});
 		// Return move
@@ -183,20 +188,21 @@ public class Minimax extends Player {
 	 *            The set of moves made by the opponent
 	 * @return The selected move
 	 */
-	private Point maxMove(Set<Point> legal, Set<Point> opponent) {
+	private Move maxMove(Set<Move> legal, Set<Move> opponent) {
 		// Initialize values
 		double value = Double.NEGATIVE_INFINITY;
 		double a = value;
-		Point choice = null;
+		Move choice = null;
 
 		// Check all legal moves
-		for (Point move : legal) {
+		for (Move move : legal) {
 			// Copy move set
-			Set<Point> selfMoves = new HashSet<>(getMoves());
+			Set<Move> selfMoves = new HashSet<>(getMoves());
 			selfMoves.add(move);
 
 			// Check for winning move
 			if (PolarTicTacToe.win(selfMoves, move)) {
+				heuristicNum = 1;
 				return move;
 			}
 			// Calculate utility
@@ -211,6 +217,7 @@ public class Minimax extends Player {
 				a = Math.max(a, value);
 			}
 		}
+		heuristicNum = value;
 		// Return move
 		return choice;
 	}
@@ -232,26 +239,29 @@ public class Minimax extends Player {
 	 *            The optimal utility found so far for the opponent
 	 * @return The optimal utility
 	 */
-	private double max(Set<Point> legal, Set<Point> self, Set<Point> opponent,
+	private double max(Set<Move> legal, Set<Move> self, Set<Move> opponent,
 			int depth, double a, double b) {
 		// Update status
 		maxDepth = Math.min(maxDepth, depth);
 		nodeCount++;
+		int nodeNum = nodeCount;
 
 		// Check for terminate condition
 		if (legal.size() == 0) {
 			return 0;
 		}
 		if (depth == 0) {
-			// return heuristic.getValue(self, opponent);
-			return 0;
+			double value = heuristic.getValue(self, opponent);
+			System.out.println("Evaluation of heuristic on node " + nodeCount
+					+ ": " + value);
+			return value;
 		}
 		// Initialize value
 		double value = Double.NEGATIVE_INFINITY;
 		// Check all legal moves
-		for (Point move : legal) {
+		for (Move move : legal) {
 			// Copy move set
-			Set<Point> selfMoves = new HashSet<>(self);
+			Set<Move> selfMoves = new HashSet<>(self);
 			selfMoves.add(move);
 
 			// Check for winning move
@@ -266,6 +276,8 @@ public class Minimax extends Player {
 
 			// Alpha-beta prune, if enabled
 			if (alphabeta && value >= b) {
+				System.out.println("Pruned node " + nodeNum + " at depth "
+						+ (searchDepth - depth) + " with value " + value);
 				return value;
 			}
 			a = Math.max(a, value);
@@ -291,26 +303,29 @@ public class Minimax extends Player {
 	 *            The optimal utility found so far for the opponent
 	 * @return The optimal utility
 	 */
-	private double min(Set<Point> legal, Set<Point> self, Set<Point> opponent,
+	private double min(Set<Move> legal, Set<Move> self, Set<Move> opponent,
 			int depth, double a, double b) {
 		// Update status
 		maxDepth = Math.min(maxDepth, depth);
 		nodeCount++;
+		int nodeNum = nodeCount;
 
 		// Check for terminate condition
 		if (legal.size() == 0) {
 			return 0;
 		}
 		if (depth == 0) {
-			// return heuristic.getValue(self, opponent);
-			return 0;
+			double value = heuristic.getValue(self, opponent);
+			System.out.println("Evaluation of heuristic on node " + nodeCount
+					+ ": " + value);
+			return value;
 		}
 		// Initialize value
 		double value = Double.POSITIVE_INFINITY;
 		// Check all legal moves
-		for (Point move : legal) {
+		for (Move move : legal) {
 			// Copy move set
-			Set<Point> opponentMoves = new HashSet<>(opponent);
+			Set<Move> opponentMoves = new HashSet<>(opponent);
 			opponentMoves.add(move);
 
 			// Check for winning move
@@ -325,6 +340,8 @@ public class Minimax extends Player {
 
 			// Alpha-beta prune, if enabled
 			if (alphabeta && value <= a) {
+				System.out.println("Pruned node " + nodeNum + " at depth "
+						+ (searchDepth - depth) + " with value " + value);
 				return value;
 			}
 			b = Math.min(b, value);

@@ -10,7 +10,6 @@
  */
 package polartictactoe;
 
-import java.awt.Point;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -19,7 +18,7 @@ import javafx.scene.layout.GridPane;
 public abstract class Player extends GridPane {
 
 	/** Set of moves made by the agent */
-	private Set<Point> moves = new HashSet<>();
+	private Set<Move> moves = new HashSet<>();
 
 	/**
 	 * Returns the move selected by the agent
@@ -30,15 +29,14 @@ public abstract class Player extends GridPane {
 	 *            The set of moves made by the opponent
 	 * @return The selected move
 	 */
-	public abstract Point getMove(Set<Point> legalMoves,
-			Set<Point> opponentMoves);
+	public abstract Move getMove(Set<Move> legalMoves, Set<Move> opponentMoves);
 
 	/**
 	 * Returns the set of moves made by the agent
 	 * 
 	 * @return The set of moves
 	 */
-	public Set<Point> getMoves() {
+	public Set<Move> getMoves() {
 		return moves;
 	}
 
@@ -48,7 +46,7 @@ public abstract class Player extends GridPane {
 	 * @param move
 	 *            The move to add
 	 */
-	public void addMove(Point move) {
+	public void addMove(Move move) {
 		moves.add(move);
 	}
 

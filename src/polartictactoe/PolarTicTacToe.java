@@ -10,7 +10,6 @@
  */
 package polartictactoe;
 
-import java.awt.Point;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -66,7 +65,7 @@ public class PolarTicTacToe extends Application {
 	Player player2;
 
 	/** Set of legal moves */
-	Set<Point> legalMoves = new HashSet<>();
+	Set<Move> legalMoves = new HashSet<>();
 
 	/**
 	 * Starts the application
@@ -101,7 +100,7 @@ public class PolarTicTacToe extends Application {
 		Label labelp2 = new Label("Player 2 (O):");
 
 		// Lay out UI content
-		GridPane layout = new GridPane();
+		final GridPane layout = new GridPane();
 		layout.setHgap(10);
 		layout.setVgap(10);
 		layout.setPadding(new Insets(10));
@@ -153,10 +152,10 @@ public class PolarTicTacToe extends Application {
 				layout.add(board, 0, 0, 1, 6);
 
 				// Initialize legal moves for first move
-				Set<Point> firstMoves = new HashSet<>();
-				for (int i = 0; i < 4; i++) {
+				Set<Move> firstMoves = new HashSet<>();
+				for (int i = 1; i <= 4; i++) {
 					for (int j = 0; j < 12; j++) {
-						firstMoves.add(new Point(i, j));
+						firstMoves.add(new Move(i, j));
 					}
 				}
 				// Start game
@@ -211,18 +210,18 @@ public class PolarTicTacToe extends Application {
 		final int offset = 10;
 
 		// Draw radial labels
-		Text text1 = new Text(y[0], y[3], "1");
-		Text text2 = new Text(y[1], y[4], "2");
-		Text text3 = new Text(y[2], y[5], "3");
-		Text text4 = new Text(y[3], y[6], "4");
-		Text text5 = new Text(y[4] - offset, y[5], "5");
-		Text text6 = new Text(y[5] - offset, y[4], "6");
-		Text text7 = new Text(y[6] - offset, y[3], "7");
-		Text text8 = new Text(y[5] - offset, y[2] + offset, "8");
-		Text text9 = new Text(y[4] - offset, y[1] + offset, "9");
-		Text text10 = new Text(y[3] - offset, y[0] + offset, "10");
-		Text text11 = new Text(y[2], y[1] + offset, "11");
-		Text text12 = new Text(y[1], y[2] + offset, "12");
+		Text text1 = new Text(y[0], y[3], "0");
+		Text text2 = new Text(y[1], y[4], "1");
+		Text text3 = new Text(y[2], y[5], "2");
+		Text text4 = new Text(y[3], y[6], "3");
+		Text text5 = new Text(y[4] - offset, y[5], "4");
+		Text text6 = new Text(y[5] - offset, y[4], "5");
+		Text text7 = new Text(y[6] - offset, y[3], "6");
+		Text text8 = new Text(y[5] - offset, y[2] + offset, "7");
+		Text text9 = new Text(y[4] - offset, y[1] + offset, "8");
+		Text text10 = new Text(y[3] - offset, y[0] + offset, "9");
+		Text text11 = new Text(y[2], y[1] + offset, "10");
+		Text text12 = new Text(y[1], y[2] + offset, "11");
 
 		// Label coordinates
 		final int[] x = { center + r[0], center + r[1], center + r[2],
@@ -251,11 +250,12 @@ public class PolarTicTacToe extends Application {
 	 * @param legal
 	 *            The set of legal moves
 	 */
-	private void play(Player player, Player next, Set<Point> legal) {
+	private void play(final Player player, final Player next,
+			final Set<Move> legal) {
 		// Create a task to get the next move
-		Task<Point> moveTask = new Task<Point>() {
+		final Task<Move> moveTask = new Task<Move>() {
 			@Override
-			protected Point call() {
+			protected Move call() {
 				return player.getMove(legal, next.getMoves());
 			}
 		};
@@ -265,7 +265,7 @@ public class PolarTicTacToe extends Application {
 			@Override
 			public void handle(WorkerStateEvent e) {
 				// Get move
-				Point move = moveTask.getValue();
+				Move move = moveTask.getValue();
 				player.addMove(move);
 
 				// Update legal moves
@@ -277,7 +277,7 @@ public class PolarTicTacToe extends Application {
 				player.setDisable(true);
 
 				// Check for winning move
-				if (win(player.getMoves(), move)) {
+				if (printWin(player.getMoves(), move)) {
 					// Reset the game board
 					boxp1.setDisable(false);
 					boxp2.setDisable(false);
@@ -303,6 +303,7 @@ public class PolarTicTacToe extends Application {
 				} else {
 					// Play next turn
 					next.setDisable(false);
+					System.out.println("Legal neighborhood: " + legalMoves);
 					play(next, player, legalMoves);
 				}
 			}
@@ -319,7 +320,7 @@ public class PolarTicTacToe extends Application {
 	 * @param player
 	 *            The current player
 	 */
-	private void drawMove(Point move, Player player) {
+	private void drawMove(Move move, Player player) {
 		// Initialize settings
 		Text symbol = new Text();
 		symbol.setFont(Font.font("System", FontWeight.BOLD, 20));
@@ -333,7 +334,7 @@ public class PolarTicTacToe extends Application {
 			symbol.setFill(Color.BLUE);
 		}
 		// Calculate the location of the move on the game board
-		int radius = r[(int) move.getX()];
+		int radius = r[(int) move.getX() - 1];
 		double angle = (12 - move.getY()) * Math.PI / 6;
 		symbol.setX(center + radius * Math.cos(angle) - 7);
 		symbol.setY(center + radius * Math.sin(angle) + 7);
@@ -355,29 +356,29 @@ public class PolarTicTacToe extends Application {
 	 *            The set of moves made by player 2
 	 * @return The new set of legal moves
 	 */
-	public static Set<Point> addNeighbors(Point move, Set<Point> currentMoves,
-			Set<Point> p1Moves, Set<Point> p2Moves) {
+	public static Set<Move> addNeighbors(Move move, Set<Move> currentMoves,
+			Set<Move> p1Moves, Set<Move> p2Moves) {
 		// Copy move set
-		Set<Point> moves = new HashSet<>(currentMoves);
+		Set<Move> moves = new HashSet<>(currentMoves);
 
 		// Add moves on same circle
-		moves.add(new Point((int) move.getX(), (int) (move.getY() + 11) % 12));
-		moves.add(new Point((int) move.getX(), (int) (move.getY() + 1) % 12));
+		moves.add(new Move((int) move.getX(), (int) (move.getY() + 11) % 12));
+		moves.add(new Move((int) move.getX(), (int) (move.getY() + 1) % 12));
 
 		// Add moves on inward circle
-		if (move.getX() > 0) {
-			moves.add(new Point((int) move.getX() - 1, (int) move.getY()));
-			moves.add(new Point((int) move.getX() - 1,
+		if (move.getX() > 1) {
+			moves.add(new Move((int) move.getX() - 1, (int) move.getY()));
+			moves.add(new Move((int) move.getX() - 1,
 					(int) (move.getY() + 11) % 12));
-			moves.add(new Point((int) move.getX() - 1,
+			moves.add(new Move((int) move.getX() - 1,
 					(int) (move.getY() + 1) % 12));
 		}
 		// Add moves on outward circle
-		if (move.getX() < 3) {
-			moves.add(new Point((int) move.getX() + 1, (int) move.getY()));
-			moves.add(new Point((int) move.getX() + 1,
+		if (move.getX() < 4) {
+			moves.add(new Move((int) move.getX() + 1, (int) move.getY()));
+			moves.add(new Move((int) move.getX() + 1,
 					(int) (move.getY() + 11) % 12));
-			moves.add(new Point((int) move.getX() + 1,
+			moves.add(new Move((int) move.getX() + 1,
 					(int) (move.getY() + 1) % 12));
 		}
 		// Remove moves already made
@@ -398,31 +399,31 @@ public class PolarTicTacToe extends Application {
 	 * @return true if the current move results in a win
 	 * @return false otherwise
 	 */
-	public static boolean win(Set<Point> moves, Point currentMove) {
+	public static boolean win(Set<Move> moves, Move currentMove) {
 		// Ensure the current move is in the move set
 		moves.add(currentMove);
 
 		// Check moves along line
 		int y = (int) currentMove.getY();
-		if (moves.contains(new Point(0, y)) && moves.contains(new Point(1, y))
-				&& moves.contains(new Point(2, y))
-				&& moves.contains(new Point(3, y))) {
+		if (moves.contains(new Move(1, y)) && moves.contains(new Move(2, y))
+				&& moves.contains(new Move(3, y))
+				&& moves.contains(new Move(4, y))) {
 			return true;
 		}
 		// Check moves along counter-clockwise spiral
 		y = (int) (currentMove.getY() - currentMove.getX() + 12) % 12;
-		if (moves.contains(new Point(0, y))
-				&& moves.contains(new Point(1, (y + 1) % 12))
-				&& moves.contains(new Point(2, (y + 2) % 12))
-				&& moves.contains(new Point(3, (y + 3) % 12))) {
+		if (moves.contains(new Move(1, y))
+				&& moves.contains(new Move(2, (y + 1) % 12))
+				&& moves.contains(new Move(3, (y + 2) % 12))
+				&& moves.contains(new Move(4, (y + 3) % 12))) {
 			return true;
 		}
 		// Check moves along clockwise spiral
 		y = (int) (currentMove.getY() + currentMove.getX()) % 12;
-		if (moves.contains(new Point(0, y))
-				&& moves.contains(new Point(1, (y + 11) % 12))
-				&& moves.contains(new Point(2, (y + 10) % 12))
-				&& moves.contains(new Point(3, (y + 9) % 12))) {
+		if (moves.contains(new Move(1, y))
+				&& moves.contains(new Move(2, (y + 11) % 12))
+				&& moves.contains(new Move(3, (y + 10) % 12))
+				&& moves.contains(new Move(4, (y + 9) % 12))) {
 			return true;
 		}
 		// Check moves along circle
@@ -430,14 +431,103 @@ public class PolarTicTacToe extends Application {
 		// Unify with all 4 terms of inference rule
 		for (int i = 0; i < 4; i++) {
 			y = (int) (currentMove.getY() - i + 12) % 12;
-			if (moves.contains(new Point(x, y))
-					&& moves.contains(new Point(x, (y + 1) % 12))
-					&& moves.contains(new Point(x, (y + 2) % 12))
-					&& moves.contains(new Point(x, (y + 3) % 12))) {
+			if (moves.contains(new Move(x, y))
+					&& moves.contains(new Move(x, (y + 1) % 12))
+					&& moves.contains(new Move(x, (y + 2) % 12))
+					&& moves.contains(new Move(x, (y + 3) % 12))) {
 				return true;
 			}
 		}
 		// No win found
+		return false;
+	}
+
+	/**
+	 * Duplicate win checker that prints the resolution process
+	 * 
+	 * @param moves
+	 *            The set of moves made by the player
+	 * @param currentMove
+	 *            The current move
+	 * @return true if the current move results in a win
+	 * @return false otherwise
+	 */
+	public static boolean printWin(Set<Move> moves, Move currentMove) {
+		// Ensure the current move is in the move set
+		moves.add(currentMove);
+
+		// Check moves along line
+		System.out
+				.println("Resolving move(1,y) ^ move(2,y) ^ move(3,y) ^ move(4,y) -> win");
+		int y = (int) currentMove.getY();
+		System.out.println("Unifying move" + currentMove + " with move("
+				+ (int) currentMove.getX() + ",y): {y/" + y + "}");
+		if (moves.contains(new Move(1, y)) && moves.contains(new Move(2, y))
+				&& moves.contains(new Move(3, y))
+				&& moves.contains(new Move(4, y))) {
+			System.out.println("Resolution successful using facts: move(1," + y
+					+ "), move(2," + y + "), move(3," + y + "), move(4," + y
+					+ ")");
+			return true;
+		}
+		System.out.println("Resolution failed");
+		// Check moves along counter-clockwise spiral
+		System.out
+				.println("Resolving move(1,y) ^ move(2,y+1) ^ move(3,y+2) ^ move(4,y+3) -> win");
+		y = (int) (currentMove.getY() - currentMove.getX() + 13) % 12;
+		System.out.println("Unifying move" + currentMove + " with move("
+				+ (int) currentMove.getX() + ",y+"
+				+ (int) (currentMove.getX() - 1) + "): {y/" + y + "}");
+		if (moves.contains(new Move(1, y))
+				&& moves.contains(new Move(2, (y + 1) % 12))
+				&& moves.contains(new Move(3, (y + 2) % 12))
+				&& moves.contains(new Move(4, (y + 3) % 12))) {
+			System.out.println("Resolution successful using facts: move(1," + y
+					+ "), move(2," + (y + 1) % 12 + "), move(3," + (y + 2) % 12
+					+ "), move(4," + (y + 3) % 12 + ")");
+			return true;
+		}
+		System.out.println("Resolution failed");
+		// Check moves along clockwise spiral
+		System.out
+				.println("Resolving move(1,y) ^ move(2,y-1) ^ move(3,y-2) ^ move(4,y-3) -> win");
+		y = (int) (currentMove.getY() + currentMove.getX() - 1) % 12;
+		System.out.println("Unifying move" + currentMove + " with move("
+				+ (int) currentMove.getX() + ",y-"
+				+ (int) (currentMove.getX() - 1) + "): {y/" + y + "}");
+		if (moves.contains(new Move(1, y))
+				&& moves.contains(new Move(2, (y + 11) % 12))
+				&& moves.contains(new Move(3, (y + 10) % 12))
+				&& moves.contains(new Move(4, (y + 9) % 12))) {
+			System.out.println("Resolution successful using facts: move(1," + y
+					+ "), move(2," + (y + 11) % 12 + "), move(3," + (y + 10)
+					% 12 + "), move(4," + (y + 9) % 12 + ")");
+			return true;
+		}
+		System.out.println("Resolution failed");
+		// Check moves along circle
+		System.out
+				.println("Resolving move(x,y) ^ move(x,y+1) ^ move(x,y+2) ^ move(x,y+3) -> win");
+		int x = (int) currentMove.getX();
+		// Unify with all 4 terms of inference rule
+		for (int i = 0; i < 4; i++) {
+			y = (int) (currentMove.getY() - i + 12) % 12;
+			System.out.println("Unifying " + currentMove + " with move(x,y+"
+					+ i + "): {x/" + x + ", y/" + y + "}");
+			if (moves.contains(new Move(x, y))
+					&& moves.contains(new Move(x, (y + 1) % 12))
+					&& moves.contains(new Move(x, (y + 2) % 12))
+					&& moves.contains(new Move(x, (y + 3) % 12))) {
+				System.out.println("Resolution successful using facts: move("
+						+ x + "," + y + "), move(" + x + "," + (y + 1) % 12
+						+ "), move(" + x + "," + (y + 2) % 12 + "), move(" + x
+						+ "," + (y + 3) % 12 + ")");
+				return true;
+			}
+			System.out.println("Resolution failed");
+		}
+		// No win found
+		System.out.println("No win found");
 		return false;
 	}
 

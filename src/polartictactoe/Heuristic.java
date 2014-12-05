@@ -6,11 +6,10 @@
  *
  *	Author: Erik Anderson
  *
- *	Date: 10/25/14
+ *	Date: 12/1/14
  */
 package polartictactoe;
 
-import java.awt.Point;
 import java.util.Set;
 
 public abstract class Heuristic {
@@ -26,7 +25,6 @@ public abstract class Heuristic {
 	 *            The set of moves made by the opponent
 	 * @return The value of the current state
 	 */
-	public abstract double getValue(Set<Point> selfMoves,
-			Set<Point> opponentMoves);
+	public abstract double getValue(Set<Move> selfMoves, Set<Move> opponentMoves);
 
 }

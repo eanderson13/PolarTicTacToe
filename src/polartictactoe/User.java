@@ -10,7 +10,6 @@
  */
 package polartictactoe;
 
-import java.awt.Point;
 import java.util.Set;
 
 import javafx.application.Platform;
@@ -25,7 +24,7 @@ import javafx.scene.paint.Color;
 public class User extends Player {
 
 	/** Move selected by the user */
-	Point selectedPoint = null;
+	Move selectedPoint = null;
 	/** Label to prompt user to select a move */
 	Label selectLabel = new Label("Select a move:");
 	/** Button to submit move */
@@ -37,14 +36,14 @@ public class User extends Player {
 	public User() {
 		// Create UI content
 		Label xLabel = new Label("X (from center):");
-		ComboBox<Integer> xBox = new ComboBox<>(
+		final ComboBox<Integer> xBox = new ComboBox<>(
 				FXCollections.observableArrayList(1, 2, 3, 4));
 		xBox.getSelectionModel().selectFirst();
 
 		Label yLabel = new Label("Y (around circle):");
-		ComboBox<Integer> yBox = new ComboBox<>(
-				FXCollections.observableArrayList(1, 2, 3, 4, 5, 6, 7, 8, 9,
-						10, 11, 12));
+		final ComboBox<Integer> yBox = new ComboBox<>(
+				FXCollections.observableArrayList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+						10, 11));
 		yBox.getSelectionModel().selectFirst();
 
 		// Update UI
@@ -63,9 +62,9 @@ public class User extends Player {
 				selectLabel.setText("Select a move:");
 
 				// Get selected move
-				selectedPoint = new Point(xBox.getSelectionModel()
-						.getSelectedIndex(), yBox.getSelectionModel()
-						.getSelectedIndex());
+				selectedPoint = new Move(xBox.getSelectionModel()
+						.getSelectedItem(), yBox.getSelectionModel()
+						.getSelectedItem());
 
 				// Signal selection
 				synchronized (select) {
@@ -81,7 +80,7 @@ public class User extends Player {
 	 * @see polartictactoe.Player#getMove(java.util.Set, java.util.Set)
 	 */
 	@Override
-	public Point getMove(Set<Point> legalMoves, Set<Point> opponentMoves) {
+	public Move getMove(Set<Move> legalMoves, Set<Move> opponentMoves) {
 		while (true) {
 			// Wait for move to be submitted
 			try {
