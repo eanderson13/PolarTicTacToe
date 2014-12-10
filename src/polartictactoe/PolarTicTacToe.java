@@ -10,6 +10,8 @@
  */
 package polartictactoe;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -26,6 +28,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -54,18 +57,29 @@ public class PolarTicTacToe extends Application {
 	ComboBox<String> boxp2 = new ComboBox<>(choices);
 	/** Container for drawing the game board */
 	Group board = new Group();
+	/** Label for number of games to play */
+	Label countLabel = new Label("Number of Games:");
+	/** Text field for number of games to play */
+	TextField countField = new TextField("1");
 	/** Button to start game */
 	Button play = new Button("Play");
 	/** Label to report game outcome */
 	Label message = new Label();
 
+	/** The number of games to play */
+	int count;
+
 	/** Player 1 agent */
 	Player player1;
 	/** Player 2 agent */
 	Player player2;
+	/** PrintWriter to output player 1's results */
+	PrintWriter p1Results;
+	/** PrintWriter to output player 2's results */
+	PrintWriter p2Results;
 
 	/** Set of legal moves */
-	Set<Move> legalMoves = new HashSet<>();
+	Set<Move> legalMoves;
 
 	/**
 	 * Starts the application
@@ -83,13 +97,25 @@ public class PolarTicTacToe extends Application {
 	 */
 	@Override
 	public void start(Stage primaryStage) {
+		// Initialization
 		primaryStage.setTitle("Polar Tic Tac Toe");
+		try {
+			p1Results = new PrintWriter("data/p1Results_FN.csv");
+			p2Results = new PrintWriter("data/p2Results_FN.csv");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 
 		// Quit program on UI close
 		primaryStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
 
 			@Override
 			public void handle(WindowEvent e) {
+				p1Results.flush();
+				p1Results.close();
+				p2Results.flush();
+				p2Results.close();
 				System.exit(0);
 			}
 
@@ -104,17 +130,28 @@ public class PolarTicTacToe extends Application {
 		layout.setHgap(10);
 		layout.setVgap(10);
 		layout.setPadding(new Insets(10));
-		layout.setPrefSize(600, 350);
-		layout.add(board, 0, 0, 1, 6);
+		layout.setPrefSize(600, 400);
+		layout.add(board, 0, 0, 1, 7);
 		layout.addRow(0, labelp1, boxp1);
 		layout.addRow(2, labelp2, boxp2);
 		layout.add(message, 1, 4, 2, 1);
-		layout.add(play, 2, 5);
+		layout.addRow(5, countLabel, countField);
+		layout.add(play, 2, 6);
 
 		// Play button handler
 		play.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent e) {
+				// Get number of games to play
+				try {
+					count = Integer.parseInt(countField.getText()) - 1;
+				} catch (NumberFormatException e1) {
+					return;
+				}
+				countField.setText(count + "");
+				p1Results.println("Number of games left: " + count);
+				p2Results.println("Number of games left: " + count);
+
 				// Create new player 1 agent
 				layout.getChildren().remove(player1);
 				switch (boxp1.getSelectionModel().getSelectedIndex()) {
@@ -122,7 +159,7 @@ public class PolarTicTacToe extends Application {
 					player1 = new User();
 					break;
 				case 1:
-					player1 = new Minimax();
+					player1 = new Minimax(NeuralNet.getInstance(), count / 6 + 1, true, p1Results);
 					break;
 				}
 				layout.add(player1, 1, 1, 2, 1);
@@ -134,7 +171,7 @@ public class PolarTicTacToe extends Application {
 					player2 = new User();
 					break;
 				case 1:
-					player2 = new Minimax();
+					player2 = new Minimax(NeighborHeuristic.getInstance(), count % 6 + 1, true, p2Results);
 					break;
 				}
 				layout.add(player2, 1, 3, 2, 1);
@@ -143,6 +180,7 @@ public class PolarTicTacToe extends Application {
 				player2.setDisable(true);
 				boxp1.setDisable(true);
 				boxp2.setDisable(true);
+				countField.setDisable(true);
 				play.setVisible(false);
 				message.setText("");
 
@@ -152,6 +190,7 @@ public class PolarTicTacToe extends Application {
 				layout.add(board, 0, 0, 1, 6);
 
 				// Initialize legal moves for first move
+				legalMoves = new HashSet<>();
 				Set<Move> firstMoves = new HashSet<>();
 				for (int i = 1; i <= 4; i++) {
 					for (int j = 0; j < 12; j++) {
@@ -278,28 +317,26 @@ public class PolarTicTacToe extends Application {
 
 				// Check for winning move
 				if (printWin(player.getMoves(), move)) {
-					// Reset the game board
-					boxp1.setDisable(false);
-					boxp2.setDisable(false);
-					play.setVisible(true);
-					play.setText("Play Again");
-
 					// Indicate winner
 					if (player == player1) {
 						message.setText("Game Over! Player 1 wins.");
+						p1Results.println(",,,,,1");
+						p2Results.println(",,,,,0");
 					} else {
 						message.setText("Game Over! Player 2 wins.");
+						p1Results.println(",,,,,0");
+						p2Results.println(",,,,,1");
 					}
+					// Reset board
+					resetBoard();
+
 					// Check for tie game
 				} else if (legalMoves.isEmpty()) {
-					// Reset the game board
-					boxp1.setDisable(false);
-					boxp2.setDisable(false);
-					play.setVisible(true);
-					play.setText("Play Again");
-
 					// Indicate tie
 					message.setText("Game Over! Tie game.");
+
+					// Reset board
+					resetBoard();
 				} else {
 					// Play next turn
 					next.setDisable(false);
@@ -341,6 +378,22 @@ public class PolarTicTacToe extends Application {
 
 		// Update the game board
 		board.getChildren().add(symbol);
+	}
+
+	private void resetBoard() {
+		// Check if all games have been played
+		if (count <= 0) {
+			// Reset the game board
+			boxp1.setDisable(false);
+			boxp2.setDisable(false);
+			countField.setDisable(false);
+			countField.setText("1");
+			play.setVisible(true);
+			play.setText("Play Again");
+		} else {
+			// Play another game
+			play.fire();
+		}
 	}
 
 	/**

@@ -10,6 +10,7 @@
  */
 package polartictactoe;
 
+import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,6 +31,10 @@ public class Minimax extends Player {
 	boolean alphabeta;
 	/** Heuristic to use */
 	Heuristic heuristic;
+	/** Indicates whether the parameters were preset */
+	boolean preset;
+	/** PrintWriter to output results */
+	PrintWriter results;
 
 	/** Maximum search depth reached for the current move */
 	int maxDepth;
@@ -54,7 +59,11 @@ public class Minimax extends Player {
 	/**
 	 * Sets up the UI to get parameters from the user
 	 */
-	public Minimax() {
+	public Minimax(PrintWriter result) {
+		// Initialize values
+		results = result;
+		preset = false;
+
 		// Create UI content
 		Label heuristicLabel = new Label("Heuristic:");
 		final ComboBox<String> heuristicBox = new ComboBox<>(
@@ -63,7 +72,7 @@ public class Minimax extends Player {
 		heuristicBox.getSelectionModel().selectFirst();
 
 		Label depthLabel = new Label("Search depth (0 = unbounded):");
-		final TextField depthField = new TextField("0");
+		final TextField depthField = new TextField("1");
 		depthField.setPrefWidth(0);
 
 		Label abLabel = new Label("Use alpha-beta pruning?");
@@ -84,17 +93,21 @@ public class Minimax extends Player {
 			@Override
 			public void handle(ActionEvent e) {
 				// Update parameters
-				searchDepth = Integer.parseInt(depthField.getText());
+				try {
+					searchDepth = Integer.parseInt(depthField.getText());
+				} catch (NumberFormatException e1) {
+					return;
+				}
 				alphabeta = (abBox.getSelectionModel().getSelectedIndex() == 0);
 				switch (heuristicBox.getSelectionModel().getSelectedIndex()) {
 				case 0:
 					heuristic = NeighborHeuristic.getInstance();
 					break;
 				case 1:
-					// heuristic = new Heuristic();
+					heuristic = Classifier.getInstance();
 					break;
 				case 2:
-					// heuristic = new Heuristic();
+					heuristic = NeuralNet.getInstance();
 					break;
 				}
 
@@ -104,6 +117,28 @@ public class Minimax extends Player {
 				}
 			}
 		});
+	}
+
+	/**
+	 * Additional constructor to preset the parameters, for the purpose of mass
+	 * testing
+	 * 
+	 * @param heur
+	 *            Heuristic to use
+	 * @param depth
+	 *            Maximum search depth
+	 * @param ab
+	 *            Indicates whether alpha-beta pruning is enabled
+	 * @param result
+	 *            PrintWriter to output results
+	 */
+	public Minimax(Heuristic heur, int depth, boolean ab, PrintWriter result) {
+		// Initialize values
+		heuristic = heur;
+		searchDepth = depth;
+		alphabeta = ab;
+		results = result;
+		preset = true;
 	}
 
 	/*
@@ -119,7 +154,7 @@ public class Minimax extends Player {
 		// Check if first move
 		if (getMoves().size() == 0) {
 			// Wait for parameters to be submitted
-			while (true) {
+			while (!preset) {
 				try {
 					synchronized (submit) {
 						submit.wait();
@@ -156,6 +191,10 @@ public class Minimax extends Player {
 					addRow(3, heuristicLabel, heuristicValue);
 				}
 			});
+			results.printf(
+					"Heuristic: %s\nSearch Depth: %d\nAlpha-Beta Pruning: %b\n",
+					heuristic, searchDepth, alphabeta);
+			results.println("Max Search Depth, Number of Nodes, Time (ms), Heuristic, Move, Wins");
 		}
 		// Initialize values
 		maxDepth = searchDepth - 1;
@@ -165,17 +204,23 @@ public class Minimax extends Player {
 		// Get move
 		Move move = maxMove(legal, opponentMoves);
 
+		// Update values
+		maxDepth = searchDepth - maxDepth;
+		time = System.currentTimeMillis() - time;
+
 		// Update UI
 		Platform.runLater(new Thread() {
 			@Override
 			public void run() {
-				depthValue.setText((searchDepth - maxDepth) + "");
+				depthValue.setText(maxDepth + "");
 				nodeValue.setText(nodeCount + "");
-				timeValue.setText((System.currentTimeMillis() - time) + "");
+				timeValue.setText(time + "");
 				heuristicValue.setText(heuristicNum + "");
 			}
 		});
 		// Return move
+		results.printf("%d,%d,%d,%f,\"%s\"\n", maxDepth, nodeCount, time,
+				heuristicNum, move);
 		return move;
 	}
 
