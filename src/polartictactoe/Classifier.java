@@ -20,7 +20,7 @@ public class Classifier extends Heuristic {
 				heuristicHash[x][y] = 0;
 			}
 		}
-		readGames("fileOut.txt");
+		readGames("testGames.txt");
 		double sum = 0; // ROBL
 		for (int x = 0; x < 4; x++) {
 			for (int y = 0; y < 12; y++) {

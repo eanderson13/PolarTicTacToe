@@ -3,12 +3,21 @@ src/polartictactoe/PolarTicTacToe.java - Creates the user interface for playing 
 src/polartictactoe/Player.java - Abstract class that all Polar Tic Tac Toe agents must implement.
 src/polartictactoe/User.java - Implements the controls to allow the user to play Polar Tic Tac Toe.
 src/polartictactoe/Minimax.java - Implements a minimax search algorithm to play Polar Tic Tac Toe.
+src/polartictactoe/Random.java - Selects random moves from the legal move set for the purpose of generating training data.
 src/polartictactoe/Heuristic.java - Abstract class that all Polar Tic Tac Toe heuristic functions must implement.
 src/polartictactoe/NeighborHeuristic.java - Implements a function that calculates a heuristic based on open win paths.
 src/polartictactoe/Classifier.java - Implements a nearest neighbor classifier to evaluate the board state.
 src/polartictactoe/NeuralNet.java - Implements a temporal difference learning neural network to evaluate the board state.
 src/polartictactoe/Move.java - A class that extends java.awt.Point in order to print moves in the desired format.
 
+testGames.txt - Set of example games used by the classifier and used to train the neural network.
+
+data/p1Results_CN.csv - Raw output data for player 1 from playing the classifier against the neural network with alpha-beta pruning.
+data/p2Results_CN.csv - Raw output data for player 2 from playing the classifier against the neural network with alpha-beta pruning.
+data/p1Results_NF.csv - Raw output data for player 1 from playing the heuristic function against the neural network with alpha-beta pruning.
+data/p2Results_NF.csv - Raw output data for player 2 from playing the heuristic function against the neural network with alpha-beta pruning.
+data/p1Results_FC.csv - Raw output data for player 1 from playing the classifier against the heuristic function with alpha-beta pruning.
+data/p2Results_FC.csv - Raw output data for player 2 from playing the classifier against the heuristic function with alpha-beta pruning.
 data/p1Results_Function_AB.csv - Raw output data for player 1 from playing the heuristic function against itself with alpha-beta pruning.
 data/p2Results_Function_AB.csv - Raw output data for player 2 from playing the heuristic function against itself with alpha-beta pruning.
 data/p1Results_Function_No_AB.csv - Raw output data for player 1 from playing the heuristic function against itself without alpha-beta pruning.

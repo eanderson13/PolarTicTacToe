@@ -100,8 +100,8 @@ public class PolarTicTacToe extends Application {
 		// Initialization
 		primaryStage.setTitle("Polar Tic Tac Toe");
 		try {
-			p1Results = new PrintWriter("data/p1Results_FN.csv");
-			p2Results = new PrintWriter("data/p2Results_FN.csv");
+			p1Results = new PrintWriter("data/p1Results.csv");
+			p2Results = new PrintWriter("data/p2Results.csv");
 		} catch (FileNotFoundException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -159,7 +159,7 @@ public class PolarTicTacToe extends Application {
 					player1 = new User();
 					break;
 				case 1:
-					player1 = new Minimax(NeuralNet.getInstance(), count / 6 + 1, true, p1Results);
+					player1 = new Minimax(p1Results);
 					break;
 				}
 				layout.add(player1, 1, 1, 2, 1);
@@ -171,7 +171,7 @@ public class PolarTicTacToe extends Application {
 					player2 = new User();
 					break;
 				case 1:
-					player2 = new Minimax(NeighborHeuristic.getInstance(), count % 6 + 1, true, p2Results);
+					player2 = new Minimax(p2Results);
 					break;
 				}
 				layout.add(player2, 1, 3, 2, 1);
